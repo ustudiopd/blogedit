@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Tiptap / Novel styles */
+.ProseMirror {
+  padding: 1rem;
+  min-height: 500px;
+}
+
+.resize-handle:hover {
+  transform: scale(1.2);
+}
