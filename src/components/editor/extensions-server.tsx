@@ -13,7 +13,6 @@ export const extensions = [
         heading: {
             levels: [1, 2, 3],
         },
-        link: false,
     }),
     TextStyle,
     Color,

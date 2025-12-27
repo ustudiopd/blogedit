@@ -31,8 +31,13 @@ export async function POST(request: NextRequest) {
 Output ONLY the slug.
 Title: "${title}"`;
 
+        const { createGoogleGenerativeAI } = await import('@ai-sdk/google');
+        const googleProvider = createGoogleGenerativeAI({
+            apiKey: apiKey,
+        });
+
         const { text: slug } = await generateText({
-            model: google('gemini-2.0-flash-exp', { apiKey }),
+            model: googleProvider('gemini-2.0-flash-exp'),
             prompt,
             maxTokens: 50,
         });

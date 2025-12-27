@@ -34,7 +34,22 @@ export default function BlogEditor({
 }: BlogEditorProps) {
     const supabase = createClient();
 
-    // 이미지 업로드 함수
+    // 공통 업로드 로직
+    const commonUploadFn = async (file: File): Promise<string> => {
+        if (uploadFn) return uploadFn(file);
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `blog-images/${fileName}`;
+
+        const { data, error } = await supabase.storage.from('blog-images').upload(filePath, file);
+        if (error) throw error;
+
+        const { data: { publicUrl } } = supabase.storage.from('blog-images').getPublicUrl(filePath);
+        return publicUrl;
+    };
+
+    // 이미지 업로드 핸들러 (UI용)
     const imageUploadFn = useMemo(() => {
         return createImageUpload({
             validateFn: (file: File) => {
@@ -48,21 +63,9 @@ export default function BlogEditor({
                 }
                 return true;
             },
-            onUpload: async (file: File): Promise<string> => {
-                if (uploadFn) return uploadFn(file);
-
-                const fileExt = file.name.split('.').pop();
-                const fileName = `${Math.random()}.${fileExt}`;
-                const filePath = `blog-images/${fileName}`;
-
-                const { data, error } = await supabase.storage.from('blog-images').upload(filePath, file);
-                if (error) throw error;
-
-                const { data: { publicUrl } } = supabase.storage.from('blog-images').getPublicUrl(filePath);
-                return publicUrl;
-            },
+            onUpload: commonUploadFn,
         });
-    }, [uploadFn, supabase]);
+    }, [commonUploadFn]);
 
     // 이미지 확장 설정 (Novel.sh UpdatedImage 기반)
     const imageExtension = useMemo(() => {
@@ -91,11 +94,8 @@ export default function BlogEditor({
 
     // 슬래시 메뉴 아이템
     const editorSuggestionItems = useMemo(() => {
-        return createSuggestionItemsWithUpload(async (file) => {
-            // 내부 명령용 업로드
-            return imageUploadFn(file);
-        });
-    }, [imageUploadFn]);
+        return createSuggestionItemsWithUpload(commonUploadFn);
+    }, [commonUploadFn]);
 
     return (
         <EditorRoot>

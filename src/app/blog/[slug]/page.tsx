@@ -1,10 +1,11 @@
 import PostViewer from '@/components/blog/PostViewer';
 
-export default function BlogDetailPage({ params }: { params: { slug: string } }) {
+export default async function BlogDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
     // 실제 구현에서는 slug로 DB에서 데이터를 가져와야 함
     const mockHtml = `
     <h1>블로그 상세 페이지</h1>
-    <p>슬러그: <strong>${params.slug}</strong></p>
+    <p>슬러그: <strong>${slug}</strong></p>
     <p>이 페이지는 PostViewer 컴포넌트를 사용하여 렌더링됩니다.</p>
     <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085" alt="Test Image" style="width: 100%;" />
   `;
