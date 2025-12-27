@@ -11,15 +11,50 @@ export default function BlogWritePage() {
     const [content, setContent] = useState<JSONContent | undefined>();
     const [generatingSlug, setGeneratingSlug] = useState(false);
 
-    // 실시간 저장 (초안 저장용 - 여기서는 콘솔 출력으로 대체)
+    // 실시간 저장 (GitHub API 연동)
     const { saveStatus, lastSaved, triggerSave } = useAutoSave({
-        docId: 'new-draft',
-        debounceMs: 2000,
+        docId: slug || 'new-draft',
+        debounceMs: 5000, // 너무 빈번한 커밋 방지를 위해 시간을 늘림
         onSave: async (savedContent, savedTitle) => {
-            console.log('Saving to server...', { savedTitle, savedContent });
-            // 실제 API 호출 로직은 여기에 들어감
+            if (!slug || !savedTitle) return;
+
+            try {
+                await fetch('/api/blog/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: savedTitle,
+                        content: savedContent,
+                        slug: slug,
+                    }),
+                });
+            } catch (error) {
+                console.error('Auto-save error:', error);
+            }
         },
     });
+
+    const handlePublish = async () => {
+        if (!title || !content || !slug) {
+            alert('제목, 내용, 슬러그를 모두 입력해주세요.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/blog/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, content, slug }),
+            });
+            if (response.ok) {
+                alert('GitHub에 성공적으로 발행되었습니다! Netlify에서 다시 빌드될 때까지 1~2분 정도 기다려주세요.');
+            } else {
+                throw new Error('저장 실패');
+            }
+        } catch (error) {
+            alert('발행 중 오류가 발생했습니다.');
+        }
+    };
 
     // 제목 변경 시 슬러그 자동 생성
     useEffect(() => {
@@ -74,7 +109,9 @@ export default function BlogWritePage() {
                             {saveStatus === 'offline' && <span className="text-orange-500">오프라인</span>}
                             {saveStatus === 'error' && <span className="text-red-500">저장 실패</span>}
                         </div>
-                        <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition-colors font-medium">
+                        <button
+                            onClick={handlePublish}
+                            className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition-colors font-medium">
                             발행하기
                         </button>
                     </div>

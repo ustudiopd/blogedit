@@ -17,7 +17,7 @@ import {
 } from 'novel';
 import { extensions as defaultExtensions, createSuggestionItemsWithUpload } from './extensions';
 import { ImageResizeExtension } from './extensions/ImageResizeExtension';
-import { createClient } from '@/lib/supabase/client';
+
 
 interface BlogEditorProps {
     content?: JSONContent;
@@ -32,21 +32,26 @@ export default function BlogEditor({
     uploadFn,
     placeholder = '내용을 입력하세요... (슬래시 "/" 를 눌러 메뉴 확인)',
 }: BlogEditorProps) {
-    const supabase = createClient();
 
-    // 공통 업로드 로직
+    // 공통 업로드 로직 (GitHub API 사용)
     const commonUploadFn = async (file: File): Promise<string> => {
         if (uploadFn) return uploadFn(file);
 
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `blog-images/${fileName}`;
+        const formData = new FormData();
+        formData.append('file', file);
 
-        const { data, error } = await supabase.storage.from('blog-images').upload(filePath, file);
-        if (error) throw error;
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+        });
 
-        const { data: { publicUrl } } = supabase.storage.from('blog-images').getPublicUrl(filePath);
-        return publicUrl;
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || '이미지 업로드에 실패했습니다.');
+        }
+
+        const data = await response.json();
+        return data.url;
     };
 
     // 이미지 업로드 핸들러 (UI용)

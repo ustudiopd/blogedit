@@ -1,14 +1,31 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { generateHTML } from '@tiptap/html';
+import { extensions as defaultExtensions } from '../editor/extensions-server';
+import type { JSONContent } from '@tiptap/core';
 
 interface PostViewerProps {
-    htmlContent: string;
+    htmlContent?: string;
+    initialContent?: JSONContent;
 }
 
-export default function PostViewer({ htmlContent }: PostViewerProps) {
+export default function PostViewer({ htmlContent, initialContent }: PostViewerProps) {
     const [lightboxImage, setLightboxImage] = useState<string | null>(null);
     const contentRef = useRef<HTMLDivElement>(null);
+
+    const renderedHtml = useMemo(() => {
+        if (htmlContent) return htmlContent;
+        if (initialContent) {
+            try {
+                return generateHTML(initialContent, defaultExtensions);
+            } catch (e) {
+                console.error('HTML generation error:', e);
+                return '<p>콘텐츠를 렌더링하는 중 오류가 발생했습니다.</p>';
+            }
+        }
+        return '';
+    }, [htmlContent, initialContent]);
 
     useEffect(() => {
         if (!contentRef.current) return;
@@ -34,7 +51,7 @@ export default function PostViewer({ htmlContent }: PostViewerProps) {
                 contentRef.current.removeEventListener('click', handleContentClick);
             }
         };
-    }, [htmlContent]);
+    }, [renderedHtml]);
 
     useEffect(() => {
         if (!lightboxImage) return;
@@ -50,7 +67,7 @@ export default function PostViewer({ htmlContent }: PostViewerProps) {
             <div
                 ref={contentRef}
                 className="prose prose-invert dark:prose-invert prose-headings:text-white prose-p:text-gray-200 prose-strong:text-white prose-code:text-gray-100 prose-li:text-gray-200 max-w-none"
-                dangerouslySetInnerHTML={{ __html: htmlContent }}
+                dangerouslySetInnerHTML={{ __html: renderedHtml || '' }}
             />
 
             {lightboxImage && (
